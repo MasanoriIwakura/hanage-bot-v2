@@ -9,13 +9,18 @@ const CALENDAR_URL_LIST = {
 
 const CALENDAR_IMAGE_REGEX = /ekibana_calendar(1[0-2]|[1-9])_web\.jpeg$/;
 
-export class CalendarFutureYearError extends Error {};
-export class CalendarNotFoundError extends Error {};
+export class CalendarFutureYearError extends Error {}
+export class CalendarNotFoundError extends Error {}
 
 const getAllCalendarUrlsByYear = async (year: number, env: Cloudflare.Env) => {
   const thisYear = dayjs().year();
   if (year > thisYear) {
     throw new CalendarFutureYearError("Year cannot be in the future");
+  }
+
+  const kvSrcList = await env.HANAGE_BOT_V2_CALENDAR.get(String(year));
+  if (kvSrcList) {
+    return JSON.parse(kvSrcList) as string[];
   }
 
   const calendarUrl =
@@ -30,11 +35,6 @@ const getAllCalendarUrlsByYear = async (year: number, env: Cloudflare.Env) => {
 
   if (!calendarPage.ok) {
     throw new Error(`Failed to fetch calendar page for year ${year}`);
-  }
-
-  const kvSrcList = await env.HANAGE_BOT_V2_CALENDAR.get(String(year));
-  if (kvSrcList) {
-    return JSON.parse(kvSrcList) as string[];
   }
 
   const srcList: string[] = [];
@@ -72,5 +72,7 @@ export const getCalendarUrlByYearMonth = async (
     }
   }
 
-  throw new CalendarNotFoundError(`Calendar image not found for ${year}-${month}`);
-}
+  throw new CalendarNotFoundError(
+    `Calendar image not found for ${year}-${month}`
+  );
+};
